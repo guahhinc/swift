@@ -1,0 +1,2067 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swift</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.3.0/math.js"></script>
+    <script src="codingengine.js"></script>
+    <script src="engine.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+
+    <style>
+        :root {
+            /* Light Mode */
+            --bg-color: #f3f4f6;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #e5e7eb;
+            --primary: #1f2937;
+            --text: #374151;
+            --accent: #3b82f6;
+            --math-bg: rgba(59, 130, 246, 0.1);
+            --item-hover: #f3f4f6;
+            --item-active: #eff6ff;
+            --item-active-text: #3b82f6;
+            --calc-bg: #f9fafb;
+            --calc-key-bg: #ffffff;
+            --calc-key-text: #374151;
+            --modal-bg: #ffffff;
+            --chat-user-bg: #3b82f6;
+            --chat-user-text: #ffffff;
+            --chat-bot-bg: #e5e7eb;
+            --chat-bot-text: #374151;
+
+            /* Default Font */
+            --font-main: 'Inter Tight', sans-serif;
+        }
+
+        body.dark-mode {
+            /* Dark Mode */
+            --bg-color: #121212;
+            --sidebar-bg: #1e1e1e;
+            --sidebar-border: #333333;
+            --primary: #e5e5e5;
+            --text: #d4d4d4;
+            --accent: #60a5fa;
+            --math-bg: rgba(96, 165, 250, 0.15);
+            --item-hover: #2d2d2d;
+            --item-active: #2d2d2d;
+            --item-active-text: #60a5fa;
+            --calc-bg: #121212;
+            --calc-key-bg: #2d2d2d;
+            --calc-key-text: #e5e5e5;
+            --modal-bg: #1e1e1e;
+            --chat-user-bg: #60a5fa;
+            --chat-user-text: #000000;
+            --chat-bot-bg: #333333;
+            --chat-bot-text: #e5e5e5;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-main);
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            overflow: hidden;
+            color: var(--text);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* --- Sidebar --- */
+        #sidebar {
+            width: 260px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            user-select: none;
+            z-index: 20;
+            transition: background 0.3s;
+        }
+
+        .sidebar-header {
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        #file-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 5px;
+        }
+
+        .fs-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 4px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 2px;
+            font-size: 14px;
+            color: var(--text);
+            border: 1px solid transparent;
+            transition: all 0.1s;
+        }
+
+        .fs-item:hover {
+            background-color: var(--item-hover);
+        }
+
+        .fs-item.active {
+            background-color: var(--item-active);
+            color: var(--item-active-text);
+            font-weight: 500;
+        }
+
+        .arrow-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #9ca3af;
+            transition: transform 0.2s;
+            border-radius: 4px;
+        }
+
+        .arrow-icon:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--primary);
+        }
+
+        .arrow-icon.open {
+            transform: rotate(90deg);
+        }
+
+        .arrow-spacer {
+            width: 20px;
+        }
+
+        .fs-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            margin-left: 4px;
+            object-fit: contain;
+        }
+
+        /* --- Main Views --- */
+        #main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background: var(--bg-color);
+        }
+
+        #toolbar {
+            background: var(--sidebar-bg);
+            padding: 0 20px;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            z-index: 10;
+            height: 50px;
+        }
+
+        #toolbar button {
+            padding: 6px 12px;
+            background: var(--sidebar-bg);
+            color: var(--text);
+            border: 1px solid var(--sidebar-border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: inherit;
+        }
+
+        #toolbar button:hover {
+            opacity: 0.8;
+            border-color: var(--accent);
+        }
+
+        .btn-solve-all {
+            color: var(--accent) !important;
+            border-color: var(--accent) !important;
+            background: rgba(59, 130, 246, 0.1) !important;
+        }
+
+        /* --- Editor Area --- */
+        #editor-wrapper {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            /* Changed from auto to hidden for manual scroll handling if needed, or keep auto but handle absolute children carefully */
+            overflow-y: auto;
+            background: var(--sidebar-bg);
+            display: block;
+        }
+
+        #object-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            min-height: 100%;
+            z-index: 20;
+            pointer-events: none;
+            /* Let clicks pass through to text */
+            overflow: visible;
+        }
+
+        #object-layer>* {
+            pointer-events: auto;
+            /* Re-enable clicks on objects */
+            position: absolute;
+        }
+
+        #text-layer {
+            position: relative;
+            min-height: 100%;
+            padding: 60px;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--text);
+            z-index: 10;
+        }
+
+        #text-layer a {
+            color: var(--accent);
+            text-decoration: underline !important;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        #text-layer a:hover {
+            opacity: 0.8;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 4px;
+        }
+
+        /* AI Answer Gradient Styling - Atomic Block */
+        @keyframes gradient-flow {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .ai-answer {
+            display: block;
+            /* New line */
+            margin-top: 6px;
+            margin-bottom: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            /* Helps treat it as a block */
+            color: var(--text);
+        }
+
+        .ai-answer-gradient {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #eab308);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-flow 0.5s linear infinite;
+            display: inline;
+        }
+
+        .doc-image {
+            max-width: 100%;
+            display: inline-block;
+            vertical-align: middle;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 4px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s;
+        }
+
+        .doc-image:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .doc-image.selected {
+            outline: 3px solid var(--accent);
+        }
+
+        /* --- Calculator View --- */
+        #calculator-ui {
+            flex: 1;
+            display: none;
+            background: var(--bg-color);
+            padding: 30px;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .calc-wrapper {
+            background: var(--sidebar-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--sidebar-border);
+            width: 440px;
+        }
+
+        .calc-display {
+            background: var(--bg-color);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: right;
+            font-size: 24px;
+            margin-bottom: 20px;
+            min-height: 40px;
+            word-wrap: break-word;
+            color: var(--primary);
+            font-weight: 300;
+            font-family: 'Courier New', monospace;
+        }
+
+        .calc-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            padding: 12px;
+            border: 1px solid var(--sidebar-border);
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            background: var(--calc-key-bg);
+            color: var(--calc-key-text);
+            transition: all 0.1s;
+            font-family: inherit;
+        }
+
+        .calc-btn:hover {
+            opacity: 0.9;
+        }
+
+        .calc-btn:active {
+            transform: scale(0.96);
+        }
+
+        .calc-btn.sci {
+            background: rgba(0, 0, 0, 0.03);
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .calc-btn.op {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .calc-btn.eq {
+            background: var(--primary);
+            color: var(--sidebar-bg);
+            grid-column: span 1;
+            border-color: var(--primary);
+        }
+
+        .calc-btn.clr {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        .calc-history {
+            width: 300px;
+            height: 500px;
+            background: var(--sidebar-bg);
+            border-radius: 16px;
+            padding: 20px;
+            overflow-y: auto;
+            border: 1px solid var(--sidebar-border);
+            color: var(--text);
+        }
+
+        .hist-entry {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--sidebar-border);
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        /* --- Assistant (AI) View --- */
+        #assistant-ui {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            background: var(--bg-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #chat-status {
+            padding: 10px 20px;
+            font-size: 12px;
+            color: #6b7280;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--sidebar-bg);
+            flex-shrink: 0;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .status-dot.online {
+            background: #22c55e;
+        }
+
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            position: relative;
+            white-space: pre-wrap;
+        }
+
+        .bubble-user {
+            align-self: flex-end;
+            background: var(--chat-user-bg);
+            color: var(--chat-user-text);
+            border-bottom-right-radius: 4px;
+        }
+
+        .bubble-bot {
+            align-self: flex-start;
+            background: var(--chat-bot-bg);
+            color: var(--chat-bot-text);
+            border-bottom-left-radius: 4px;
+        }
+
+        #chat-input-area {
+            padding: 20px;
+            background: var(--sidebar-bg);
+            border-top: 1px solid var(--sidebar-border);
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        #chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--sidebar-border);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+        }
+
+        #chat-input:focus {
+            border-color: var(--accent);
+        }
+
+        .btn-send {
+            padding: 0 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-send:hover {
+            opacity: 0.9;
+        }
+
+        /* --- Settings View --- */
+        #settings-ui {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            padding: 40px;
+            background: var(--bg-color);
+            align-items: center;
+        }
+
+        .settings-card {
+            background: var(--sidebar-bg);
+            width: 400px;
+            padding: 30px;
+            border-radius: 12px;
+            border: 1px solid var(--sidebar-border);
+            color: var(--text);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .setting-label {
+            font-weight: 500;
+        }
+
+        .setting-select {
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--sidebar-border);
+            background: var(--bg-color);
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 22px;
+        }
+
+        .toggle-input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .toggle-input:checked+.toggle-slider {
+            background-color: var(--accent);
+        }
+
+        .toggle-input:checked+.toggle-slider:before {
+            transform: translateX(18px);
+        }
+
+        .settings-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            background: var(--bg-color);
+            border: 1px solid var(--sidebar-border);
+            cursor: pointer;
+            color: var(--text);
+            border-radius: 6px;
+        }
+
+        .settings-btn:hover {
+            background: var(--item-hover);
+        }
+
+        .version-footer {
+            margin-top: 20px;
+            color: #9ca3af;
+            font-size: 12px;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        /* --- Math & Images --- */
+        .math-box {
+            background-color: var(--math-bg);
+            border-bottom: 2px solid var(--accent);
+            border-radius: 4px;
+            padding: 0 4px;
+            cursor: context-menu;
+            display: inline-block;
+            color: var(--text);
+        }
+
+        .math-steps {
+            display: block;
+            margin: 12px 0;
+            background: var(--bg-color);
+            border-left: 3px solid var(--accent);
+            padding: 12px 16px;
+            font-size: 0.95em;
+            color: var(--text);
+            border-radius: 0 8px 8px 0;
+        }
+
+        #resize-handle {
+            width: 14px;
+            height: 14px;
+            background: var(--accent);
+            position: absolute;
+            display: none;
+            cursor: se-resize;
+            border: 2px solid white;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            border-radius: 50%;
+        }
+
+        /* --- Modal --- */
+        #modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 5000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            padding: 24px;
+            border-radius: 12px;
+            width: 320px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            transform: scale(0.95);
+            opacity: 0;
+            transition: all 0.2s;
+            color: var(--text);
+            border: 1px solid var(--sidebar-border);
+        }
+
+        .modal.open {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        .modal h3 {
+            margin: 0 0 16px 0;
+            font-size: 18px;
+        }
+
+        .modal input,
+        .modal select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--sidebar-border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            margin-bottom: 24px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            background: var(--bg-color);
+            color: var(--text);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .btn-confirm {
+            background: var(--primary);
+            color: var(--sidebar-bg);
+        }
+
+        .btn-cancel {
+            background: var(--bg-color);
+            color: var(--text);
+            border: 1px solid var(--sidebar-border);
+        }
+
+        /* --- Context Menus --- */
+        .context-menu {
+            position: absolute;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--sidebar-border);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            display: none;
+            z-index: 6000;
+            min-width: 160px;
+            padding: 4px;
+            overflow: hidden;
+        }
+
+        .menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text);
+            border-radius: 4px;
+            display: block;
+        }
+
+        .menu-item:hover {
+            background-color: var(--bg-color);
+            color: var(--accent);
+        }
+
+        .separator {
+            height: 1px;
+            background: var(--sidebar-border);
+            margin: 4px 0;
+        }
+
+        .empty-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            color: #9ca3af;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body id="app-body">
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="sidebar-header">
+            Swift
+        </div>
+        <div id="file-list" ondrop="handleDrop(event, null)" ondragover="allowDrop(event)"></div>
+        <div style="font-size:12px; color:#999; margin-top:auto; text-align:center; padding-top:10px;">Right click to
+            create</div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main">
+        <!-- Editor Toolbar -->
+        <div id="toolbar">
+            <select onchange="formatFont(this.value)" id="toolbar-font"
+                style="padding:6px; border-radius:6px; border:1px solid var(--sidebar-border); background:var(--sidebar-bg); color:var(--text); font-size:13px; margin-right:5px; width:130px;">
+                <option value="Inter Tight">Inter Tight</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Open Sans">Open Sans</option>
+                <option value="Lato">Lato</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Oswald">Oswald</option>
+                <option value="Source Code Pro">Source Code Pro</option>
+                <option value="Comic Sans MS">Comic Sans MS</option>
+            </select>
+            <select onchange="formatFontSize(this.value)" id="toolbar-size"
+                style="padding:6px; border-radius:6px; border:1px solid var(--sidebar-border); background:var(--sidebar-bg); color:var(--text); font-size:13px; margin-right:5px;">
+                <option value="12px">12</option>
+                <option value="14px" selected>14</option>
+                <option value="16px">16</option>
+                <option value="18px">18</option>
+                <option value="20px">20</option>
+                <option value="24px">24</option>
+                <option value="28px">28</option>
+                <option value="32px">32</option>
+                <option value="48px">48</option>
+            </select>
+            <div style="width:1px; height:24px; background:var(--sidebar-border); margin:0 5px;"></div>
+
+            <!-- Formatting Buttons -->
+            <div style="display:flex; gap:2px; margin-right:5px;">
+                <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold"><span
+                        class="material-symbols-outlined" style="font-size:20px;">format_bold</span></button>
+                <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic"><span
+                        class="material-symbols-outlined" style="font-size:20px;">format_italic</span></button>
+                <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline"><span
+                        class="material-symbols-outlined" style="font-size:20px;">format_underlined</span></button>
+            </div>
+            <div style="width:1px; height:24px; background:var(--sidebar-border); margin:0 5px;"></div>
+
+            <!-- Lists & Extras -->
+            <div style="display:flex; gap:2px; margin-right:5px;">
+                <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List"><span
+                        class="material-symbols-outlined" style="font-size:20px;">format_list_bulleted</span></button>
+                <button class="toolbar-btn" onclick="insertChecklist()" title="Checklist"><span
+                        class="material-symbols-outlined" style="font-size:20px;">check_box</span></button>
+                <button class="toolbar-btn" onclick="insertGraph()" title="Insert Graph"><span
+                        class="material-symbols-outlined" style="font-size:20px;">bar_chart</span></button>
+            </div>
+
+            <div style="width:1px; height:24px; background:var(--sidebar-border); margin:0 5px;"></div>
+            <button class="toolbar-btn" onclick="triggerImageUpload()" title="Add Image"><span
+                    class="material-symbols-outlined" style="font-size:20px;">add_photo_alternate</span></button>
+            <input type="file" id="img-upload" hidden onchange="insertImage(this)">
+
+
+            <span id="hint-text" style="font-size:12px; color:#9ca3af; margin-left:auto;"></span>
+        </div>
+
+        <!-- Text Editor Wrapper -->
+        <div id="editor-wrapper" style="display:none">
+            <div id="object-layer"></div>
+            <div id="text-layer" contenteditable="true" spellcheck="false"></div>
+            <div id="resize-handle"></div>
+        </div>
+
+        <!-- Calculator Interface (Fixed Scientific) -->
+        <div id="calculator-ui">
+            <div class="calc-wrapper" id="calc-body">
+                <div class="calc-display" id="calc-screen">0</div>
+                <div class="calc-grid">
+                    <button class="calc-btn sci" onclick="calcInput('sin(')">sin</button>
+                    <button class="calc-btn sci" onclick="calcInput('cos(')">cos</button>
+                    <button class="calc-btn sci" onclick="calcInput('tan(')">tan</button>
+                    <button class="calc-btn sci" onclick="calcInput('log(')">log</button>
+                    <button class="calc-btn clr" onclick="calcInput('C')">AC</button>
+
+                    <button class="calc-btn sci" onclick="calcInput('^')">x^y</button>
+                    <button class="calc-btn sci" onclick="calcInput('sqrt(')">√</button>
+                    <button class="calc-btn sci" onclick="calcInput('(')">(</button>
+                    <button class="calc-btn sci" onclick="calcInput(')')">)</button>
+                    <button class="calc-btn op" onclick="calcInput('/')">÷</button>
+
+                    <button class="calc-btn sci" onclick="calcInput('pi')">π</button>
+                    <button class="calc-btn" onclick="calcInput('7')">7</button>
+                    <button class="calc-btn" onclick="calcInput('8')">8</button>
+                    <button class="calc-btn" onclick="calcInput('9')">9</button>
+                    <button class="calc-btn op" onclick="calcInput('*')">×</button>
+
+                    <button class="calc-btn sci" onclick="calcInput('e')">e</button>
+                    <button class="calc-btn" onclick="calcInput('4')">4</button>
+                    <button class="calc-btn" onclick="calcInput('5')">5</button>
+                    <button class="calc-btn" onclick="calcInput('6')">6</button>
+                    <button class="calc-btn op" onclick="calcInput('-')">-</button>
+
+                    <button class="calc-btn sci" onclick="calcInput('inv')">1/x</button>
+                    <button class="calc-btn" onclick="calcInput('1')">1</button>
+                    <button class="calc-btn" onclick="calcInput('2')">2</button>
+                    <button class="calc-btn" onclick="calcInput('3')">3</button>
+                    <button class="calc-btn op" onclick="calcInput('+')">+</button>
+
+                    <button class="calc-btn sci" onclick="calcInput('abs(')">|x|</button>
+                    <button class="calc-btn" onclick="calcInput('0')">0</button>
+                    <button class="calc-btn" onclick="calcInput('.')">.</button>
+                    <button class="calc-btn" onclick="calcBack()">⌫</button>
+                    <button class="calc-btn eq" onclick="calcSolve()">=</button>
+                </div>
+            </div>
+            <div class="calc-history">
+                <div style="font-weight:600; margin-bottom:15px; font-size:14px;">TAPE HISTORY</div>
+                <div id="calc-history-list"></div>
+            </div>
+        </div>
+
+        <!-- Guahh AI Interface -->
+        <div id="assistant-ui">
+            <div id="chat-status">
+                <div class="status-dot" id="brain-dot"></div> <span id="brain-text">Offline</span>
+            </div>
+            <div id="chat-container"></div>
+            <div id="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask your question..."
+                    onkeypress="if(event.key==='Enter') sendChat()">
+                <button class="btn-send" onclick="sendChat()">Send</button>
+            </div>
+        </div>
+
+        <!-- Settings Interface -->
+        <div id="settings-ui">
+            <h2 style="margin-bottom:30px;">Settings</h2>
+            <div class="settings-card">
+                <div class="setting-row">
+                    <span class="setting-label">Dark Mode</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" class="toggle-input" id="dark-mode-toggle" onchange="toggleDarkMode()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="setting-row">
+                    <span class="setting-label">Math Acronym</span>
+                    <select class="setting-select" id="acronym-select" onchange="saveSettings()">
+                        <option value="BODMAS">BODMAS</option>
+                        <option value="PEMDAS">PEMDAS</option>
+                        <option value="BIDMAS">BIDMAS</option>
+                        <option value="PIDMAS">PIDMAS</option>
+                    </select>
+                </div>
+
+                <hr style="border:0; border-top:1px solid var(--sidebar-border); margin:20px 0;">
+                <div style="display:flex; gap:10px;">
+                    <button class="settings-btn" onclick="exportData()">Backup Data (JSON)</button>
+                    <button class="settings-btn" onclick="document.getElementById('import-file').click()">Restore
+                        Data</button>
+                    <input type="file" id="import-file" hidden accept=".json" onchange="importData(this)">
+                </div>
+                <div class="version-footer" id="app-version"></div>
+            </div>
+        </div>
+
+        <!-- Empty State (Initial) -->
+        <div id="empty-view" class="empty-state">Select a file to begin</div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title">Title</h3>
+            <div id="modal-body"></div>
+            <div class="modal-buttons">
+                <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button class="btn-confirm" id="modal-confirm-btn">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context Menus -->
+    <div id="ctx-editor" class="context-menu">
+        <div class="menu-item" id="solve-btn">Solve Result</div>
+        <div class="menu-item" id="steps-btn">Solve with Steps</div>
+        <div class="separator"></div>
+        <div class="menu-item" id="ask-ai-btn">Ask Guahh AI</div>
+        <div class="separator"></div>
+        <div class="menu-item" id="link-btn">Link</div>
+        <div class="separator"></div>
+        <div class="menu-item" id="copy-btn">Copy</div>
+        <div class="menu-item" id="paste-btn">Paste</div>
+    </div>
+
+    <!-- Object Context Menu -->
+    <div id="ctx-object" class="context-menu">
+        <div class="menu-item" onclick="deleteActiveObject()" style="color:#ef4444;">Delete</div>
+        <div class="separator"></div>
+        <div class="menu-item" onclick="objectLayerOrder('front')">Bring to Front</div>
+        <div class="menu-item" onclick="objectLayerOrder('back')">Send to Back</div>
+    </div>
+
+    <!-- Sidebar Item Menu -->
+    <div id="ctx-fs-item" class="context-menu">
+        <div class="menu-item" id="ctx-download-btn" onclick="downloadSingleDoc()">Download</div>
+        <div class="separator" id="ctx-download-sep"></div>
+        <div class="menu-item" onclick="promptRename()">Rename</div>
+        <div class="menu-item" onclick="promptDelete()" style="color:#ef4444">Delete</div>
+    </div>
+
+    <!-- Sidebar BG Menu -->
+    <div id="ctx-fs-bg" class="context-menu">
+        <div class="menu-item" onclick="promptCreate('folder')">New Folder</div>
+        <div class="menu-item" onclick="promptCreate('file')">New Doc</div>
+        <div class="menu-item" onclick="promptCreate('calculator')">New Calc</div>
+        <div class="menu-item" onclick="promptCreate('assistant')">New Guahh AI</div>
+        <div class="separator"></div>
+        <div class="menu-item" onclick="triggerImportDoc()">Upload Doc</div>
+        <input type="file" id="import-doc-input" hidden accept=".json" onchange="handleDocImport(this)">
+        <div class="separator"></div>
+        <div class="menu-item" onclick="promptCreate('settings')">New Settings</div>
+    </div>
+
+    <script>
+        const CURRENT_VERSION = "Swift v1.0";
+        // const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJqzRawvi-s0rQGwGuAe1OWanW-7xCLMDynVOBeJUTzDHvYho-yrVtxMGu91mTegxpufkoSlm5AMGC/pub?gid=268600025&single=true&output=tsv";
+
+        const ICONS = {
+            folder: "https://parsefiles.back4app.com/JPaQcFfEEQ1ePBxbf6wvzkPMEqKYHhPYv8boI1Rc/11113cc80977b7c9417ce4fb349cbd35_low_res_Folder_Common.png",
+            file: "https://parsefiles.back4app.com/JPaQcFfEEQ1ePBxbf6wvzkPMEqKYHhPYv8boI1Rc/a819aac512e7261fee3310f1bbdaada7_aExwB3ULuk.png",
+            calculator: "https://mewbies.com/easter_egg_files/mac_os_x_easter_egg_icons/calculator.png",
+            assistant: "https://static.wikia.nocookie.net/logopedia/images/8/88/Siri_%28iOS%29_2021_%28Dark%29.png/revision/latest?cb=20250121130615",
+            settings: "https://www.cnet.com/a/img/resize/93b1ad47f7a64002e3d634a78bb5baf919cbb256/hub/2009/12/09/00e6cd56-f4d6-11e2-8c7c-d4ae52e62bcc/system-preferences-icon.png?auto=webp&fit=crop&height=1200&width=1200"
+        };
+        const STORAGE_KEY = 'quick_maths_data';
+        const SETTINGS_KEY = 'quick_maths_settings';
+
+        let fileSystem = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [
+            { id: 'root', name: 'My Documents', type: 'folder', parent: null, isOpen: true },
+            { id: 'intro', name: 'Welcome', type: 'file', parent: 'root', content: '<b>Welcome to Swift v1.0</b><br><br><b>What\'s New:</b><br>- <b>Ask Guahh AI:</b> Highlight text, Right Click -> Ask Guahh AI to get AI or Math answers directly in your doc!<br>- <b>Guahh AI File:</b> Create a new Guahh AI file to chat with the AI.<br>- <b>Random Generators:</b> Ask Guahh AI to "Roll a dice" or pick a "Random color".<br><br>Type math like <b>20+50</b> and press Space to solve it.' }
+        ];
+
+        let appSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || { darkMode: false, acronym: 'BODMAS', font: "'Inter Tight', sans-serif" };
+        let currentFileId = null;
+        let selectedItemId = null;
+        let rightClickedItemId = null;
+        let activeMathNode = null;
+        let storedSelection = null; // Context menu selection
+        let lastRange = null; // Toolbar selection persistence
+        let brainData = [];
+
+        function init() {
+            document.getElementById('app-version').innerText = CURRENT_VERSION;
+            applySettings();
+            renderFileSystem();
+            initGuahhAI();
+            ['quickMathsFS', 'quickMathsFS_v6'].forEach(k => {
+                const d = localStorage.getItem(k); if (d && !localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY, d);
+            });
+        }
+
+        // Local Fallback Memory (from interface.js)
+        const localFallbackMemory = [
+            { q: "hi", a: "Hello! I am Guahh AI. I'm running in Local Mode. My deep memory is offline, but I can still answer math questions!", tokens: ["hi"] },
+            { q: "hello", a: "Hello! I am Guahh AI. I'm running in Local Mode. My deep memory is offline, but I can still answer math questions!", tokens: ["hello"] },
+            { q: "who are you", a: "I am Guahh AI.", tokens: ["who", "are", "you"] }
+        ];
+
+        async function initGuahhAI() {
+            const dot = document.getElementById('brain-dot');
+            const txt = document.getElementById('brain-text');
+
+            // Only load if engine is present
+            if (typeof GuahhEngine === 'undefined') {
+                console.error("GuahhEngine not found!");
+                if (dot) { dot.classList.remove('online'); dot.style.background = 'red'; txt.innerText = "Engine Error"; }
+                return;
+            }
+
+            const initEngine = (data, mode) => {
+                GuahhEngine.init(data, (msg) => console.log(`[Guahh]: ${msg}`));
+                if (dot) {
+                    dot.classList.add('online');
+                    dot.style.background = '#22c55e';
+                    txt.innerText = mode === 'local' ? "Online (Local)" : "Online";
+                }
+            };
+
+            // Detect Local File Mode
+            if (window.location.protocol === 'file:') {
+                console.warn("Local File Mode: Using fallback memory.");
+                initEngine(localFallbackMemory, 'local');
+                return;
+            }
+
+            try {
+                if (dot) { dot.style.background = '#fbbf24'; txt.innerText = "Loading Brain..."; }
+
+                // 1. Fetch Index
+                const indexResp = await fetch('memory_index.json');
+                if (!indexResp.ok) throw new Error("Missing memory_index.json");
+                const memoryIndex = await indexResp.json();
+
+                // 2. Fetch All Chunks Parallel (Robust)
+                const chunkPromises = memoryIndex.map(file =>
+                    fetch(file).then(r => r.json()).catch(e => {
+                        console.warn(`Failed chunk ${file}:`, e);
+                        return [];
+                    })
+                );
+                const chunks = await Promise.all(chunkPromises);
+
+                // 3. Combine Data
+                const combinedData = [].concat(...chunks);
+                console.log(`Loaded ${combinedData.length} entries.`);
+
+                // 4. Init Engine
+                initEngine(combinedData, 'full');
+
+            } catch (e) {
+                console.error("Guahh Init Failed, falling back:", e);
+                // Fallback on error too so it works
+                initEngine(localFallbackMemory, 'local');
+            }
+        }
+
+        function applySettings() {
+            if (appSettings.darkMode) document.body.classList.add('dark-mode');
+            else document.body.classList.remove('dark-mode');
+            document.documentElement.style.setProperty('--font-main', appSettings.font);
+            document.getElementById('dark-mode-toggle').checked = appSettings.darkMode;
+            document.getElementById('acronym-select').value = appSettings.acronym;
+        }
+
+        function toggleDarkMode() {
+            appSettings.darkMode = document.getElementById('dark-mode-toggle').checked;
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+            applySettings();
+        }
+
+        function saveSettings() {
+            appSettings.acronym = document.getElementById('acronym-select').value;
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(appSettings));
+            applySettings();
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fileSystem));
+            const node = document.createElement('a');
+            node.setAttribute("href", dataStr);
+            node.setAttribute("download", "quick_maths_backup.json");
+            document.body.appendChild(node); node.click(); node.remove();
+        }
+
+        function importData(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if (Array.isArray(json)) {
+                        fileSystem = json; saveFS(); renderFileSystem();
+                        alert("Data restored successfully!");
+                    } else alert("Invalid file format.");
+                } catch (err) { alert("Error reading file"); }
+            };
+            reader.readAsText(file);
+        }
+
+        function downloadSingleDoc() {
+            const file = fileSystem.find(f => f.id === rightClickedItemId);
+            if (!file || file.type !== 'file') return;
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(file));
+            const node = document.createElement('a');
+            node.setAttribute("href", dataStr);
+            node.setAttribute("download", `${file.name.replace(/\s+/g, '_')}.json`);
+            document.body.appendChild(node); node.click(); node.remove();
+        }
+
+        function triggerImportDoc() { document.getElementById('import-doc-input').click(); }
+
+        function handleDocImport(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const doc = JSON.parse(e.target.result);
+                    if (doc && doc.type === 'file') {
+                        doc.id = generateId();
+                        let parent = 'root';
+                        const sel = fileSystem.find(i => i.id === selectedItemId);
+                        if (sel) parent = sel.type === 'folder' ? sel.id : sel.parent;
+                        doc.parent = parent;
+                        fileSystem.push(doc);
+                        saveFS();
+                        renderFileSystem();
+                        selectItem(doc.id);
+                    } else { alert("Invalid document format."); }
+                } catch (err) { alert("Error reading file"); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function saveFS() { localStorage.setItem(STORAGE_KEY, JSON.stringify(fileSystem)); }
+
+        function renderFileSystem() {
+            const list = document.getElementById('file-list');
+            list.innerHTML = '';
+
+            function renderItems(parentId, depth) {
+                const items = fileSystem.filter(i => i.parent === parentId);
+                items.sort((a, b) => (a.type !== b.type ? (a.type === 'folder' ? -1 : 1) : a.name.localeCompare(b.name)));
+
+                items.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = `fs-item ${item.id === selectedItemId ? 'active' : ''}`;
+                    el.style.paddingLeft = `${depth * 15 + 4}px`;
+                    el.setAttribute('data-id', item.id);
+                    el.onclick = (e) => { e.stopPropagation(); selectItem(item.id); };
+
+                    const arrow = document.createElement('div');
+                    if (item.type === 'folder') {
+                        arrow.className = `arrow-icon ${item.isOpen ? 'open' : ''}`;
+                        arrow.innerHTML = '&#10095;';
+                        arrow.onclick = (e) => { e.stopPropagation(); toggleFolder(item.id); };
+                    } else { arrow.className = 'arrow-spacer'; }
+
+                    el.draggable = true;
+                    el.ondragstart = (e) => { e.dataTransfer.setData("text/plain", item.id); };
+                    el.ondragover = (e) => { e.preventDefault(); if (item.type === 'folder') el.classList.add('drag-over'); };
+                    el.ondragleave = (e) => el.classList.remove('drag-over');
+                    el.ondrop = (e) => handleDrop(e, item.id);
+
+                    const icon = document.createElement('img');
+                    icon.src = ICONS[item.type] || ICONS.file;
+                    icon.className = 'fs-icon';
+
+                    const text = document.createElement('span');
+                    text.innerText = item.name;
+
+                    el.appendChild(arrow); el.appendChild(icon); el.appendChild(text); list.appendChild(el);
+
+                    if (item.type === 'folder' && item.isOpen) renderItems(item.id, depth + 1);
+                });
+            }
+            const roots = fileSystem.filter(i => !i.parent);
+            if (roots.length > 0) renderItems(null, 0);
+        }
+
+        function selectItem(id) {
+            selectedItemId = id;
+            const item = fileSystem.find(i => i.id === id);
+            if (item.type !== 'folder') loadFile(id);
+            renderFileSystem();
+        }
+
+        function toggleFolder(id) {
+            const item = fileSystem.find(i => i.id === id);
+            if (item) { item.isOpen = !item.isOpen; saveFS(); renderFileSystem(); }
+        }
+
+        function generateId() { return '_' + Math.random().toString(36).substr(2, 9); }
+
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalBody = document.getElementById('modal-body');
+        const modalConfirm = document.getElementById('modal-confirm-btn');
+        let modalCallback = null;
+
+        function showModal(title, htmlContent, callback, btnText = "Confirm") {
+            document.getElementById('modal-title').innerText = title;
+            modalBody.innerHTML = htmlContent;
+            modalConfirm.innerText = btnText;
+            modalCallback = callback;
+            modalOverlay.style.display = 'flex';
+            setTimeout(() => { document.querySelector('.modal').classList.add('open'); const inp = modalBody.querySelector('input'); if (inp) inp.focus(); }, 10);
+        }
+        function closeModal() {
+            document.querySelector('.modal').classList.remove('open'); setTimeout(() => { modalOverlay.style.display = 'none'; }, 200); modalCallback = null;
+        }
+        modalConfirm.onclick = () => { if (modalCallback) modalCallback(); closeModal(); };
+
+        function promptCreate(type) {
+            let html = `<input type="text" id="m-name" placeholder="Name">`;
+            let title = `New ${type.charAt(0).toUpperCase() + type.slice(1)}`;
+            if (type === 'assistant') title = "New Guahh AI";
+
+            showModal(title, html, () => {
+                const name = document.getElementById('m-name').value || "Untitled";
+                let parent = 'root'; const sel = fileSystem.find(i => i.id === selectedItemId);
+                if (sel) parent = sel.type === 'folder' ? sel.id : sel.parent;
+                const newItem = { id: generateId(), name: name, type: type, parent: parent };
+                if (type === 'folder') newItem.isOpen = true;
+                else if (type === 'file') newItem.content = '';
+                else if (type === 'calculator') { newItem.subtype = 'scientific'; newItem.history = []; }
+                else if (type === 'assistant') { newItem.history = []; }
+                fileSystem.push(newItem); saveFS(); renderFileSystem(); if (type !== 'folder') selectItem(newItem.id);
+            }, "Create");
+        }
+
+        function promptDelete() {
+            const id = rightClickedItemId || selectedItemId; if (!id) return;
+            showModal("Delete Item", "<p style='color:var(--text)'>Are you sure you want to delete this?</p>", () => {
+                let ids = [id]; let added = true;
+                while (added) { added = false; fileSystem.forEach(f => { if (ids.includes(f.parent) && !ids.includes(f.id)) { ids.push(f.id); added = true; } }); }
+                fileSystem = fileSystem.filter(f => !ids.includes(f.id));
+                if (ids.includes(currentFileId)) { currentFileId = null; loadFile(null); }
+                saveFS(); renderFileSystem();
+            }, "Delete");
+        }
+
+        function promptRename() {
+            const item = fileSystem.find(i => i.id === rightClickedItemId); if (!item) return;
+            showModal("Rename", `<input type="text" id="m-rename" value="${item.name}">`, () => {
+                const val = document.getElementById('m-rename').value; if (val) { item.name = val; saveFS(); renderFileSystem(); }
+            }, "Save");
+        }
+
+        const views = { empty: document.getElementById('empty-view'), editor: document.getElementById('editor-wrapper'), calc: document.getElementById('calculator-ui'), settings: document.getElementById('settings-ui'), assistant: document.getElementById('assistant-ui') };
+        const textLayer = document.getElementById('text-layer');
+
+        function loadFile(id) {
+            currentFileId = id;
+            Object.values(views).forEach(v => v.style.display = 'none');
+            document.getElementById('toolbar').style.display = 'none';
+            if (!id) { views.empty.style.display = 'flex'; return; }
+            const file = fileSystem.find(i => i.id === id);
+
+            if (file.type === 'file') {
+                views.editor.style.display = 'block';
+                document.getElementById('toolbar').style.display = 'flex';
+                // Removed btn-solve-all and btn-add-img logic
+                document.getElementById('hint-text').innerText = "Right click math to solve";
+
+                textLayer.innerHTML = file.content || '';
+
+                // Load Object Layer
+                const objLayer = document.getElementById('object-layer');
+                objLayer.innerHTML = file.objects || '';
+                objLayer.querySelectorAll('.doc-image').forEach(img => makeObjectDraggable(img));
+
+                lastRange = null; // Clear stale selection
+
+            } else if (file.type === 'calculator') {
+                views.calc.style.display = 'flex';
+                loadCalculator(file);
+            } else if (file.type === 'assistant') {
+                views.assistant.style.display = 'flex';
+                loadAssistant(file);
+            } else if (file.type === 'settings') {
+                views.settings.style.display = 'flex';
+            }
+        }
+
+        // --- Assistant Logic ---
+        function loadAssistant(file) {
+            const container = document.getElementById('chat-container');
+            container.innerHTML = '';
+            (file.history || []).forEach(msg => appendChatBubble(msg.text, msg.sender));
+            if (!file.history || file.history.length === 0) {
+                appendChatBubble("Hi! What can I help you with?", "bot");
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            if (!question) return;
+
+            appendChatBubble(question, "user");
+            input.value = '';
+
+            const file = fileSystem.find(i => i.id === currentFileId);
+            if (!file.history) file.history = [];
+            file.history.push({ text: question, sender: "user" });
+            saveFS();
+
+            // Show Thinking...
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble bubble-bot`;
+            bubble.innerText = "(Thinking...)";
+            document.getElementById('chat-container').appendChild(bubble);
+
+            const answer = await findAnswer(question);
+
+            // Remove thinking bubble
+            if (bubble.parentNode) bubble.parentNode.removeChild(bubble);
+
+            // Animate only new bot messages
+            appendChatBubble(answer, "bot", true);
+            file.history.push({ text: answer, sender: "bot" });
+            saveFS();
+        }
+
+        function appendChatBubble(text, sender, animate = false) {
+            const container = document.getElementById('chat-container');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-bubble bubble-${sender}`;
+
+            if (sender === 'bot' && animate) {
+                bubble.classList.add('ai-answer-gradient');
+                container.appendChild(bubble);
+                container.scrollTop = container.scrollHeight;
+
+                let i = 0;
+                const speed = 2; // Fast speed
+                function type() {
+                    if (i < text.length) {
+                        bubble.textContent += text.charAt(i);
+                        i++;
+                        setTimeout(type, speed);
+                        container.scrollTop = container.scrollHeight; // Auto scroll
+                    } else {
+                        // Fade out gradient
+                        bubble.style.transition = "all 1s ease";
+                        bubble.style.webkitTextFillColor = "var(--chat-bot-text)";
+                        bubble.style.color = "var(--chat-bot-text)";
+
+                        setTimeout(() => {
+                            bubble.classList.remove('ai-answer-gradient');
+                            bubble.style.transition = "";
+                            bubble.style.webkitTextFillColor = "";
+                            bubble.style.color = "";
+                        }, 1000);
+                    }
+                }
+                type();
+            } else {
+                bubble.innerText = text;
+                container.appendChild(bubble);
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        async function findAnswer(input) {
+            const lowerInput = input.toLowerCase();
+
+            // --- 1. Robust Math Detection ---
+            let mathClean = lowerInput.replace(/(\d)\s*x\s*(\d)/g, '$1*$2');
+            const fillers = ["what's", "what is", "calculate", "solve", "the answer to", "answer", "is", "please", "tell me", "?"];
+            fillers.forEach(word => { mathClean = mathClean.replaceAll(word, ""); });
+            const potentialMath = mathClean.replace(/[^0-9\.\-\+\*\/\^\(\)\%\=\s\w]/g, '').trim();
+
+            if (/\d/.test(potentialMath)) {
+                try {
+                    let expression = potentialMath;
+                    if (/=/.test(expression) && !/^solve/.test(input)) {
+                        const parts = expression.split('=');
+                        if (parts.length === 2) {
+                            const res = math.simplify(`(${parts[0]}) - (${parts[1]})`).toString() + " = 0";
+                            return "Simplified Equation: " + res;
+                        }
+                    }
+                    const res = math.evaluate(expression);
+                    const prefix = Math.random() > 0.5 ? "It's " : "The answer is ";
+                    return prefix + math.format(res, { precision: 14 }) + (Math.random() > 0.5 ? "!" : "");
+                } catch (e) { }
+            }
+
+            // --- 2. Random Generators ---
+            if (lowerInput.includes("roll") && (lowerInput.includes("dice") || lowerInput.includes("die"))) {
+                return "🎲 You rolled a " + (Math.floor(Math.random() * 6) + 1) + "!";
+            }
+            if (lowerInput.includes("random number")) {
+                const nums = input.match(/\d+/g);
+                let min = 1, max = 100;
+                if (nums && nums.length >= 2) { min = parseInt(nums[0]); max = parseInt(nums[1]); }
+                else if (nums && nums.length === 1) { max = parseInt(nums[0]); }
+                if (min > max) [min, max] = [max, min];
+                const rand = Math.floor(Math.random() * (max - min + 1)) + min;
+                return `Here's a random number between ${min} and ${max}: ${rand}`;
+            }
+            if (lowerInput.includes("random letter") || lowerInput.includes("random character")) {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                return "🔤 Random letter: " + chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            if (lowerInput.includes("random color") || lowerInput.includes("random colour")) {
+                const colors = ["Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Cyan", "Magenta", "Lime", "Teal", "Indigo", "Violet", "Gold", "Silver"];
+                const pick = colors[Math.floor(Math.random() * colors.length)];
+                return "🎨 How about " + pick + "?";
+            }
+
+            // --- 3. Guahh AI Engine ---
+            if (typeof GuahhEngine !== 'undefined' && GuahhEngine.isReady) {
+                const response = await GuahhEngine.generateResponse(input);
+                return response.text || response;
+            }
+
+            return "Guahh AI is warming up... please wait a moment.";
+        }
+
+        // Track selection for toolbar operations
+        textLayer.addEventListener('mouseup', saveLastRange);
+        textLayer.addEventListener('keyup', (e) => {
+            saveLastRange();
+            if (e.key === ' ' || e.key === 'Enter') {
+                detectAndWrapMath();
+            }
+            saveEditor();
+        });
+
+        // Capture range right before blur if possible, though mouseup usually catches it
+        textLayer.addEventListener('blur', () => {
+            // Don't clear lastRange here, we need it for the toolbar!
+            detectAndWrapMath();
+            saveEditor();
+        });
+
+        function saveLastRange() {
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                lastRange = sel.getRangeAt(0).cloneRange();
+            }
+        }
+
+        textLayer.addEventListener('click', (e) => {
+            if (e.target.tagName === 'A') {
+                e.preventDefault(); e.stopPropagation();
+                const href = e.target.getAttribute('href');
+                if (href.startsWith('file:')) {
+                    const targetId = href.split(':')[1];
+                    if (targetId) {
+                        selectItem(targetId);
+                        const items = document.querySelectorAll('.fs-item');
+                        items.forEach(i => i.classList.remove('active'));
+                        const el = document.querySelector(`.fs-item[data-id="${targetId}"]`);
+                        if (el) el.classList.add('active');
+                    }
+                } else { window.open(href, '_blank'); }
+            }
+        });
+
+        // --- Persistence and Object Layer ---
+        function saveEditor() {
+            if (!currentFileId) return; const file = fileSystem.find(i => i.id === currentFileId); if (!file || file.type !== 'file') return;
+
+            // Save Text
+            file.content = document.getElementById('text-layer').innerHTML;
+
+            // Save Objects
+            file.objects = document.getElementById('object-layer').innerHTML;
+
+            saveFS();
+        }
+
+        function detectAndWrapMath() {
+            if (!currentFileId) return;
+            const s = window.getSelection();
+            const savedSel = (s.rangeCount > 0) ? saveSelection(textLayer) : null;
+            const walker = document.createTreeWalker(textLayer, NodeFilter.SHOW_TEXT, null, false);
+            const nodesToReplace = [];
+            const mathPattern = /((?:slope\s+of|derive|d\/dx|integrate|simplify|solve)\s+[^\n<]+)|((?:if\s+[a-z]+\s*=\s*-?\d+(?:\.\d+)?\s+solve\s+)?(?:[\(\)\d\.a-z]+(?:\s*[\+\-\*\/x^%÷]\s*[\(\)\d\.a-z]+)+)|(?:[\(\[][\d\.a-z\+\-\*\/]+[\)\]]))/gi;
+            while (walker.nextNode()) {
+                const node = walker.currentNode;
+                if (node.parentElement.classList.contains('math-box')) continue;
+                if (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE' || node.parentElement.tagName === 'A') continue;
+                if (!/[\d=\+\-\*\/^%]/.test(node.nodeValue) && !/^(slope|derive|solve)/i.test(node.nodeValue.trim())) continue;
+                if (mathPattern.test(node.nodeValue)) nodesToReplace.push(node);
+            }
+            nodesToReplace.forEach(node => {
+                const text = node.nodeValue; const span = document.createElement('span');
+                const newHTML = text.replace(mathPattern, match => {
+                    if (/^[a-z\s]+$/i.test(match)) return match;
+                    if (/^(slope|derive|d\/dx|simplify|solve)/i.test(match) || /[\d\+\-\*\/^%=\(\)]|solve/i.test(match)) return `<span class="math-box">${match}</span>`;
+                    return match;
+                });
+                if (newHTML !== text) {
+                    span.innerHTML = newHTML;
+                    if (node.parentNode) { node.parentNode.replaceChild(span, node); while (span.firstChild) span.parentNode.insertBefore(span.firstChild, span); span.parentNode.removeChild(span); }
+                }
+            });
+            if (savedSel) restoreSelection(textLayer, savedSel);
+            saveEditor();
+        }
+
+        window.solveAll = function () { document.querySelectorAll('.math-box').forEach(box => { activeMathNode = box; solveMath(false); }); activeMathNode = null; }
+        document.getElementById('solve-btn').addEventListener('click', () => solveMath(false));
+        document.getElementById('steps-btn').addEventListener('click', () => solveMath(true));
+
+        textLayer.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0 && !sel.isCollapsed) { storedSelection = sel.getRangeAt(0).cloneRange(); activeMathNode = null; }
+            else { storedSelection = null; if (e.target.classList.contains('math-box')) activeMathNode = e.target; }
+            if (activeMathNode || storedSelection) { showMenu(menus.editor, e); } else { showMenu(menus.editor, e); }
+        });
+
+        // FIXED: "Ask Assistant" inserts colored answer underneath
+        // FIXED: "Ask Guahh AI" inserts plain text answer underneath (Async)
+        document.getElementById('ask-ai-btn').addEventListener('click', async () => {
+            if (!storedSelection) { alert("Please highlight text first."); return; }
+
+            const question = storedSelection.toString();
+
+            // Show temporary loading indicator
+            const loadingNode = document.createElement("span");
+            loadingNode.innerText = " (Thinking...)";
+            loadingNode.style.color = "#888";
+            loadingNode.style.fontSize = "0.9em";
+
+            // Restore selection to manipulate it
+            const sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(storedSelection);
+            storedSelection.collapse(false); // End of selection
+            storedSelection.insertNode(loadingNode);
+
+            const answer = await findAnswer(question);
+
+            // Remove loading
+            if (loadingNode.parentNode) loadingNode.parentNode.removeChild(loadingNode);
+
+            // Restore selection AGAIN to insert answer
+            sel.removeAllRanges();
+            sel.addRange(storedSelection);
+            storedSelection.collapse(false);
+
+            const breakNode = document.createElement("br");
+            const answerNode = document.createElement("span");
+            answerNode.className = "ai-answer-gradient";
+
+            // Insert nodes
+            storedSelection.insertNode(answerNode);
+            storedSelection.insertNode(breakNode);
+
+            // Typewriter Effect
+            let i = 0;
+            const speed = 2; // Extremely fast typing (2ms)
+            function type() {
+                if (i < answer.length) {
+                    answerNode.textContent += answer.charAt(i);
+                    i++;
+                    setTimeout(type, speed);
+                } else {
+                    // Typing finished: Fade out gradient to normal text
+                    answerNode.style.transition = "all 1s ease";
+                    answerNode.style.webkitTextFillColor = "var(--text)";
+                    answerNode.style.color = "var(--text)";
+
+                    // After fade, cleanup class to ensure clean state
+                    setTimeout(() => {
+                        answerNode.classList.remove('ai-answer-gradient');
+                        answerNode.style.transition = "";
+                        answerNode.style.webkitTextFillColor = "";
+                        answerNode.style.color = "";
+                        saveEditor();
+                    }, 1000);
+                }
+            }
+            type();
+
+            // Move cursor to after answer
+            storedSelection.setStartAfter(answerNode);
+            storedSelection.collapse(true);
+            sel.removeAllRanges();
+            sel.addRange(storedSelection);
+        });
+
+        document.getElementById('link-btn').addEventListener('click', () => {
+            if (!storedSelection) { alert("Please highlight some text first."); return; }
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(storedSelection);
+            showModal("Insert Link", `<p style="font-size:13px; color:#666; margin-bottom:10px;">Enter a URL (https://...) or the exact Name of a file.</p><input type="text" id="link-input" placeholder="e.g. Welcome">`, () => {
+                const input = document.getElementById('link-input').value.trim(); if (!input) return;
+                const file = fileSystem.find(f => f.name.toLowerCase() === input.toLowerCase());
+                const href = file ? `file:${file.id}` : (input.startsWith('http') ? input : `https://${input}`);
+                const newLink = document.createElement('a'); newLink.href = href; newLink.title = "Click to open"; newLink.contentEditable = "false"; newLink.style.textDecoration = "underline"; newLink.style.color = "var(--accent)"; newLink.style.cursor = "pointer";
+                try { newLink.appendChild(storedSelection.extractContents()); storedSelection.insertNode(newLink); const space = document.createTextNode("\u00A0"); storedSelection.setStartAfter(newLink); storedSelection.insertNode(space); storedSelection.collapse(false); } catch (e) { console.error(e); alert("Could not insert link."); }
+                saveEditor(); storedSelection = null;
+            }, "Insert");
+        });
+
+        document.getElementById('paste-btn').addEventListener('click', async () => {
+            try { document.getElementById('text-layer').focus(); const text = await navigator.clipboard.readText(); document.execCommand('insertText', false, text); saveEditor(); } catch (err) { alert("Browser blocked the paste action. Please use Ctrl+V / Cmd+V."); }
+        });
+
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const textToCopy = activeMathNode ? activeMathNode.innerText : (storedSelection ? storedSelection.toString() : ""); navigator.clipboard.writeText(textToCopy);
+        });
+
+        function solveMath(showSteps) {
+            let mathText = ""; let range = null;
+            if (activeMathNode) { mathText = activeMathNode.innerText; } else if (storedSelection) { mathText = storedSelection.toString(); range = storedSelection; }
+            let cleanText = mathText.replace(/(\d)\s*x\s*(\d)/gi, '$1*$2').replace(/÷/g, '/').trim();
+            if (!cleanText) return;
+            try {
+                let resStr = "";
+                if (/^(derive|d\/dx)/i.test(cleanText)) resStr = ` = ${math.derivative(cleanText.replace(/^(derive|d\/dx)/i, '').trim(), 'x').toString()}`;
+                else if (/^solve\s+(.+)=(.+)/i.test(cleanText)) { const parts = cleanText.replace(/^solve\s+/i, '').split('='); resStr = ` -> ${math.simplify(`(${parts[0].trim()}) - (${parts[1].trim()})`).toString()} = 0`; }
+                else {
+                    if (/[a-z]/.test(cleanText) && !cleanText.includes('=')) resStr = ` = ${math.simplify(cleanText).toString()}`;
+                    else { const res = math.evaluate(cleanText); resStr = showSteps ? `<div class="math-steps"><b>Order of Operations (${appSettings.acronym})</b><br>${cleanText}<div class="step-final">= ${math.format(res, { precision: 14 })}</div></div>` : ` = ${math.format(res, { precision: 14 })}`; }
+                }
+                if (activeMathNode) { activeMathNode.innerHTML += resStr; activeMathNode.classList.remove('math-box'); }
+                else if (range) { range.collapse(false); const n = document.createElement("span"); n.innerHTML = resStr; range.insertNode(n); }
+                saveEditor();
+            } catch (e) { }
+        }
+
+        // --- Formatting Functions ---
+        function formatDoc(cmd, value = null) {
+            restoreLastRange();
+            document.execCommand(cmd, false, value);
+            document.getElementById('text-layer').focus();
+            saveEditor();
+        }
+
+        function insertChecklist() {
+            restoreLastRange();
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.style.marginRight = '8px';
+            checkbox.style.verticalAlign = 'middle';
+
+            const space = document.createTextNode('\u00A0');
+
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(space);
+                range.insertNode(checkbox);
+                range.setStartAfter(space);
+                range.collapse(true);
+                sel.removeAllRanges();
+                sel.addRange(range);
+            }
+            saveEditor();
+        }
+
+        // --- Graph Generation ---
+        function insertGraph() {
+            showModal("Create Graph", `
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label style="font-size:12px; font-weight:500;">Labels (comma separated)</label>
+                    <input type="text" id="g-labels" placeholder="Jan, Feb, Mar, Apr, May" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <label style="font-size:12px; font-weight:500;">Values (comma separated)</label>
+                    <input type="text" id="g-values" placeholder="10, 25, 15, 30, 45" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <label style="font-size:12px; font-weight:500;">Graph Type</label>
+                    <select id="g-type" style="padding:8px; border:1px solid #ddd; border-radius:6px;">
+                        <option value="line">Line Chart</option>
+                        <option value="bar">Bar Chart</option>
+                    </select>
+                </div>
+            `, () => {
+                const labels = document.getElementById('g-labels').value.split(',').map(s => s.trim());
+                const values = document.getElementById('g-values').value.split(',').map(s => parseFloat(s.trim()));
+                const type = document.getElementById('g-type').value;
+
+                if (labels.length === 0 || values.length === 0) return;
+
+                const cvs = document.createElement('canvas');
+                cvs.width = 400;
+                cvs.height = 300;
+                const ctx = cvs.getContext('2d');
+
+                // Background
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 400, 300);
+
+                // Basic Chart Drawing logic
+                const padding = 40;
+                const graphWidth = 320;
+                const graphHeight = 220;
+                const maxVal = Math.max(...values);
+
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(padding, padding);
+                ctx.lineTo(padding, padding + graphHeight);
+                ctx.lineTo(padding + graphWidth, padding + graphHeight);
+                ctx.stroke();
+
+                if (type === 'bar') {
+                    const barWidth = graphWidth / values.length;
+                    values.forEach((v, i) => {
+                        const h = (v / maxVal) * graphHeight;
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fillRect(padding + (i * barWidth) + 10, padding + graphHeight - h, barWidth - 20, h);
+
+                        // Label
+                        if (labels[i]) {
+                            ctx.fillStyle = '#374151';
+                            ctx.font = '12px sans-serif';
+                            ctx.fillText(labels[i], padding + (i * barWidth) + 10, padding + graphHeight + 15);
+                        }
+                    });
+                } else {
+                    ctx.beginPath();
+                    ctx.strokeStyle = '#3b82f6';
+                    ctx.lineWidth = 3;
+                    values.forEach((v, i) => {
+                        const x = padding + (i * (graphWidth / (values.length - 1)));
+                        const y = padding + graphHeight - ((v / maxVal) * graphHeight);
+                        if (i === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+
+                        // Dot
+                        ctx.fillStyle = '#3b82f6';
+                        ctx.fillRect(x - 3, y - 3, 6, 6);
+
+                        // Label
+                        if (labels[i]) {
+                            ctx.fillStyle = '#374151';
+                            ctx.font = '12px sans-serif';
+                            ctx.fillText(labels[i], x - 10, padding + graphHeight + 15);
+                        }
+                    });
+                    ctx.stroke();
+                }
+
+                const imgData = cvs.toDataURL();
+                addObjectToLayer(imgData, 'Graph');
+
+            }, "Generate");
+        }
+
+        function triggerImageUpload() { document.getElementById('img-upload').click(); }
+        function insertImage(input) {
+            const file = input.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                addObjectToLayer(e.target.result, 'Image');
+                input.value = '';
+            }; reader.readAsDataURL(file);
+        }
+
+        function addObjectToLayer(src, alt) {
+            const img = document.createElement('img');
+            img.src = src;
+            img.className = 'doc-image';
+            img.title = alt;
+            img.style.position = 'absolute';
+            img.style.top = (document.getElementById('editor-wrapper').scrollTop + 50) + 'px';
+            img.style.left = '50px';
+            img.style.width = '300px';
+
+            document.getElementById('object-layer').appendChild(img);
+            makeObjectDraggable(img);
+            saveEditor();
+        }
+
+        // --- Object Layer Interaction ---
+        const objectLayer = document.getElementById('object-layer');
+        let isDraggingObj = false;
+        let activeObj = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        document.getElementById('editor-wrapper').addEventListener('mousemove', (e) => {
+            if (isDraggingObj && activeObj) {
+                const wrapperRect = document.getElementById('editor-wrapper').getBoundingClientRect();
+                const x = e.clientX - wrapperRect.left + document.getElementById('editor-wrapper').scrollLeft - dragOffsetX;
+                const y = e.clientY - wrapperRect.top + document.getElementById('editor-wrapper').scrollTop - dragOffsetY;
+
+                activeObj.style.left = x + 'px';
+                activeObj.style.top = y + 'px';
+                updateHandlePos();
+            }
+        });
+
+        document.getElementById('editor-wrapper').addEventListener('mouseup', () => {
+            if (isDraggingObj) {
+                isDraggingObj = false;
+                activeObj = null;
+                saveEditor();
+            }
+        });
+
+        // --- Object Interaction Logic (Delete, Layer, Unselect) ---
+        function deleteActiveObject() {
+            if (activeObj) {
+                activeObj.remove();
+                activeObj = null;
+                resizeHandle.style.display = 'none';
+                document.getElementById('ctx-object').style.display = 'none';
+                saveEditor();
+            }
+        }
+
+        function objectLayerOrder(direction) {
+            if (activeObj) {
+                const layer = document.getElementById('object-layer');
+                if (direction === 'front') {
+                    layer.appendChild(activeObj);
+                } else {
+                    layer.prepend(activeObj);
+                }
+                document.getElementById('ctx-object').style.display = 'none';
+                saveEditor();
+            }
+        }
+
+        // Unselect on empty space click
+        document.getElementById('editor-wrapper').addEventListener('mousedown', (e) => {
+            if (e.target.id === 'editor-wrapper' || e.target.id === 'text-layer') {
+                document.querySelectorAll('.doc-image').forEach(i => i.classList.remove('selected'));
+                activeObj = null;
+                currentImg = null;
+                resizeHandle.style.display = 'none';
+                document.getElementById('ctx-object').style.display = 'none';
+            }
+        });
+
+
+        function makeObjectDraggable(el) {
+            // Drag Logic
+            el.addEventListener('mousedown', (e) => {
+                if (e.button === 2) return; // Let context menu handle right click
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                document.querySelectorAll('.doc-image').forEach(i => i.classList.remove('selected'));
+                el.classList.add('selected');
+                currentImg = el;
+                resizeHandle.style.display = 'block';
+                updateHandlePos();
+
+                isDraggingObj = true;
+                activeObj = el;
+                const rect = el.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+            });
+
+            // Right Click Logic
+            el.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                document.querySelectorAll('.doc-image').forEach(i => i.classList.remove('selected'));
+                el.classList.add('selected');
+                activeObj = el;
+                currentImg = el;
+                resizeHandle.style.display = 'block';
+                updateHandlePos();
+
+                const ctx = document.getElementById('ctx-object');
+                ctx.style.display = 'block';
+                ctx.style.top = e.clientY + 'px';
+                ctx.style.left = e.clientX + 'px';
+            });
+        }
+
+        const resizeHandle = document.getElementById('resize-handle');
+        let currentImg = null, isResizing = false, rStartX, rStartW;
+
+        function updateHandlePos() {
+            if (!currentImg || views.editor.style.display === 'none') { resizeHandle.style.display = 'none'; return; }
+
+            // For absolute objects, use offsetTop/Left directly relative to parent (object-layer -> wrapper)
+            const top = currentImg.offsetTop + currentImg.offsetHeight - 7;
+            const left = currentImg.offsetLeft + currentImg.offsetWidth - 7;
+
+            resizeHandle.style.top = top + 'px';
+            resizeHandle.style.left = left + 'px';
+        }
+
+        document.getElementById('editor-wrapper').addEventListener('scroll', updateHandlePos);
+
+        textLayer.addEventListener('click', (e) => {
+            document.querySelectorAll('.doc-image').forEach(i => i.classList.remove('selected'));
+            resizeHandle.style.display = 'none';
+            currentImg = null;
+        });
+
+        // Resize Logic
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            rStartX = e.clientX;
+            rStartW = currentImg.offsetWidth;
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (isResizing && currentImg) {
+                const w = rStartW + (e.clientX - rStartX);
+                if (w > 20) currentImg.style.width = w + 'px';
+                updateHandlePos();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (isResizing) { isResizing = false; saveEditor(); }
+        });
+
+        let calcInputStr = "";
+        function loadCalculator(file) { calcInputStr = ""; document.getElementById('calc-screen').innerText = "0"; renderCalcHistory(file); }
+        function renderCalcHistory(file) {
+            const list = document.getElementById('calc-history-list'); list.innerHTML = '';
+            (file.history || []).forEach(h => { const d = document.createElement('div'); d.className = 'hist-entry'; const p = h.split('='); d.innerHTML = `<span>${p[0]}</span><span style="font-weight:bold;color:var(--primary)">= ${p[1] || ''}</span>`; list.prepend(d); });
+        }
+        window.calcInput = (v) => { if (v === 'C') { calcInputStr = ""; v = "0"; } else if (v === 'inv') calcInputStr += '1/'; else calcInputStr += v; document.getElementById('calc-screen').innerText = calcInputStr || "0"; };
+        window.calcBack = () => { calcInputStr = calcInputStr.slice(0, -1); document.getElementById('calc-screen').innerText = calcInputStr || "0"; };
+        window.calcSolve = () => {
+            try { const res = math.evaluate(calcInputStr); const file = fileSystem.find(i => i.id === currentFileId); file.history.push(`${calcInputStr} = ${res}`); saveFS(); renderCalcHistory(file); calcInputStr = res.toString(); document.getElementById('calc-screen').innerText = res; } catch (e) { document.getElementById('calc-screen').innerText = "Error"; calcInputStr = ""; }
+        };
+
+        const menus = { fsBg: document.getElementById('ctx-fs-bg'), fsItem: document.getElementById('ctx-fs-item'), editor: document.getElementById('ctx-editor') };
+        document.addEventListener('click', (e) => { Object.values(menus).forEach(m => m.style.display = 'none'); });
+
+        document.getElementById('sidebar').addEventListener('contextmenu', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const item = e.target.closest('.fs-item');
+            if (item) {
+                rightClickedItemId = item.getAttribute('data-id');
+                const file = fileSystem.find(f => f.id === rightClickedItemId);
+                const dlBtn = document.getElementById('ctx-download-btn');
+                const dlSep = document.getElementById('ctx-download-sep');
+                if (file && file.type === 'file') { dlBtn.style.display = 'block'; dlSep.style.display = 'block'; }
+                else { dlBtn.style.display = 'none'; dlSep.style.display = 'none'; }
+                showMenu(menus.fsItem, e); menus.fsBg.style.display = 'none';
+            }
+            else { showMenu(menus.fsBg, e); menus.fsItem.style.display = 'none'; }
+        });
+
+        function showMenu(menu, e) { menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px'; }
+
+        function handleDrop(e, targetId) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); const id = e.dataTransfer.getData("text/plain"); const d = fileSystem.find(i => i.id === id); const t = fileSystem.find(i => i.id === targetId); if (t && t.type !== 'folder') return; d.parent = targetId; saveFS(); renderFileSystem(); }
+        function allowDrop(e, isFolder) { e.preventDefault(); if (isFolder || e.target.id === 'file-list') e.currentTarget.classList.add('drag-over'); }
+        function saveSelection(el) { const s = window.getSelection(); if (!s.rangeCount) return null; const r = s.getRangeAt(0); const p = r.cloneRange(); p.selectNodeContents(el); p.setEnd(r.startContainer, r.startOffset); return { start: p.toString().length }; }
+        function restoreSelection(el, s) { if (!s) return; let i = s.start, r = document.createRange(), f = false; r.setStart(el, 0); r.collapse(true); const stk = [el]; let n, c = 0; while (!f && (n = stk.pop())) { if (n.nodeType === 3) { let nx = c + n.length; if (i >= c && i <= nx) { r.setStart(n, i - c); r.collapse(true); f = true; } c = nx; } else { let l = n.childNodes.length; while (l--) stk.push(n.childNodes[l]); } } const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r); }
+
+        function formatFont(fontName) {
+            restoreLastRange();
+            document.execCommand('fontName', false, fontName);
+            document.getElementById('text-layer').focus();
+            saveLastRange(); // Save again after change
+            saveEditor();
+        }
+
+        function formatFontSize(sizePx) {
+            restoreLastRange();
+            // Force <font> tags for easy targeting
+            document.execCommand("styleWithCSS", false, false);
+            // Use strict size 7 as a marker
+            document.execCommand("fontSize", false, "7");
+
+            const fonts = document.getElementById('text-layer').querySelectorAll('font[size="7"]');
+            fonts.forEach(f => {
+                f.removeAttribute("size");
+                f.style.fontSize = sizePx;
+            });
+
+            document.getElementById('text-layer').focus();
+            saveLastRange(); // Save again after change
+            saveEditor();
+        }
+
+        function restoreLastRange() {
+            if (lastRange) {
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(lastRange);
+            }
+        }
+
+        init();
+    </script>
+</body>
+
+</html>
